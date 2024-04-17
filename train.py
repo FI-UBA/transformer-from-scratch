@@ -143,7 +143,7 @@ def get_or_build_tokenizer(config, ds, lang):
         #
         tokenizer = Tokenizer(WordLevel(unk_token='[UNK]'))
         tokenizer.pre_tokenizer = Whitespace()
-        trainer = WordLevelTrainer(special_tokens=['[UNK]', '[SOS]', '[EOS]', '[PAD]'], min_frequency=2,
+        trainer = WordLevelTrainer(special_tokens=['[UNK]', '[SOS]', '[EOS]', '[PAD]'], min_frequency=1,
                                    show_progress=True)
         tokenizer.train_from_iterator(get_all_sentences(ds, lang), trainer=trainer)
         tokenizer.save(str(tokenizer_path))
@@ -247,7 +247,8 @@ def train_model(config):
     writer = SummaryWriter(config['tensorboard']['log_dir'], comment='Transformer Test')
 
     # Optimizer
-    optimizer = torch.optim.Adam(model.parameters(), lr=config['training']['lr'], eps=1e-9)
+    optimizer = torch.optim.Adam(model.parameters(), lr=config['training']['lr'], 
+                                 betas=[0.9, 0.98], eps=1e-9)
     # optimizer = torch.optim.SGD(model.parameters(), lr=config["lr"])
 
     # Load the model if specified

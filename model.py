@@ -58,14 +58,13 @@ class PositionalEncoding(nn.Module):
         pe = torch.zeros(seq_max_len, d_model)
         # Create a vector of shape (seq_max_len, 1)
         position = torch.arange(0, seq_max_len, dtype=torch.float).unsqueeze(1)
-        # Taking the exponential of a number and calculating the logarithm we obtain the 
-        # same number but in this way we have more numerical stability.
-        div_term = torch.exp(torch.arange(0, d_model, 2).float() * -(math.log(10000.0) / d_model))
+        # Calculate the denominator of the positional encoding function
+        div_term = 10000**(torch.arange(0, d_model, 2).float() / d_model)
         # Apply the sin to the even indices of the sequence vector.
         # This means every word in the sequence but only even positions. 
-        pe[:, 0::2] = torch.sin(position * div_term)
+        pe[:, 0::2] = torch.sin(position / div_term)
         # Apply the cos to the odd indices of the matrix
-        pe[:, 1::2] = torch.cos(position * div_term)
+        pe[:, 1::2] = torch.cos(position / div_term)
         # Add a batch dimension to the positional encoding matrix
         pe = pe.unsqueeze(0)
         # Register the positional encoding as a buffer. 
@@ -76,7 +75,7 @@ class PositionalEncoding(nn.Module):
         # x = x + self.pe[:, :x.size(1)]
         # We do not need to learn the positional encoding, so we detach it from the computation graph.
         x = x + (self.pe[:, :x.shape[1], :]).requires_grad_(False)
-        # Apply dropout and return the result
+        # Apply dropout and return the result (Section 5.4: Regularization)
         return self.dropout(x)
     
     
@@ -93,8 +92,8 @@ class LayerNormalization(nn.Module):
         
     def forward(self, x):
         # Calculate the mean of the input tensor
-        mean = x.mean(-1, keepdim=True) # Take the mean of the last dimension, so everything but the batch
-        std = x.std(-1, keepdim=True) # Take the mean of the last dimension, so everything but the batch
+        mean = x.mean(dim=-1, keepdim=True) # Take the mean of the last dimension, so everything but the batch
+        std = x.std(dim=-1, keepdim=True) # Take the mean of the last dimension, so everything but the batch
         # Normalize the input tensor
         norm = self.alpha * (x - mean) / (std + self.eps) + self.bias
         return norm
@@ -110,10 +109,10 @@ class FeedForwardBlock(nn.Module):
         self.fc1 = nn.Linear(d_model, d_ff)
         # Activation function
         self.activation = nn.ReLU()
-        # Dropout layer
-        self.dropout = nn.Dropout(dropout)
         # Fully connected layer 2
         self.fc2 = nn.Linear(d_ff, d_model)
+        # Dropout layer
+        self.dropout = nn.Dropout(dropout)
         
     def forward(self, x):
         # Here we get a tensor of shape (batch_size, seq_len, d_model)
@@ -122,10 +121,10 @@ class FeedForwardBlock(nn.Module):
         x = self.fc1(x)
         # Apply the activation function
         x = self.activation(x)
-        # Apply dropout
-        x = self.dropout(x)
         # Apply the second fully connected layer
         x = self.fc2(x)
+        # Apply dropout
+        x = self.dropout(x)
         return x
 
 
@@ -143,20 +142,20 @@ class MultiHeadAttentionBlock(nn.Module):
         # Calculate the dimension of the head
         self.d_head = d_model // num_heads
         # Create the query, key and value linear layers used to learn matrices Wq, Wk and Wv
-        self.wq = nn.Linear(d_model, d_model)   # Wq
-        self.wk = nn.Linear(d_model, d_model)   # Wk
-        self.wv = nn.Linear(d_model, d_model)   # Wv
+        self.wq = nn.Linear(d_model, d_model, bias=False)   # Wq
+        self.wk = nn.Linear(d_model, d_model, bias=False)   # Wk
+        self.wv = nn.Linear(d_model, d_model, bias=False)   # Wv
         # Create the output linear layer used to learn matrix Wo
-        self.wo = nn.Linear(d_model, d_model)   # Wo
+        self.wo = nn.Linear(d_model, d_model, bias=False)   # Wo
         # Dropout layer
         self.dropout = nn.Dropout(dropout)
 
     @staticmethod
     def attention(query, key, value, mask = None, dropout: nn.Dropout = None):
         # Get the dimension of the head
-        d_head = query.shape[-1]
+        d_k = query.shape[-1]
         # Calculate the scores
-        scores = torch.matmul(query, key.transpose(-2, -1)) / math.sqrt(d_head)
+        scores = torch.matmul(query, key.transpose(-2, -1)) / math.sqrt(d_k)
         # Apply the mask
         if mask is not None:
             scores = scores.masked_fill(mask == 0, -1e9) # Replace the value of 0 with -1e9
