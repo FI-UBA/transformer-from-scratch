@@ -18,24 +18,28 @@ model:
   # Dimentionality of the embeddings
   d_model: 256
   # Number of heads in the multi-head attention
-  num_heads: 8
+  num_heads: 4
   # Number of encoder layers
   num_encoder_layers: 3
   # Number of decoder layers
   num_decoder_layers: 3
   # The feedforward dimensionality for the last fully connected layer
-  dim_feedforward: 2048
+  dim_feedforward: 1024
   # The dropout rate
   dropout: 0.1
 
 # The training configuration
 training:
   # The batch size
-  batch_size: 16
+  batch_size: 32
   # The number of epochs to train
   num_epochs: 10000
-  # The learning rate
+  # The learning rate for ADAM optimizer
   lr: 0.0001
+  # Beta1 for ADAM optimizer
+  beta1: 0.9
+  # Beta2 for ADAM optimizer
+  beta2: 0.998
   # Folder name to save the model weights
   model_folder: "weights"
   # Basename for the model weights
