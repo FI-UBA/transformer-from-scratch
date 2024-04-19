@@ -17,4 +17,5 @@ tokenizers==0.15.2
 tqdm==4.66.2
 altair==5.3.0
 wandb==0.16.6
+jupyterlab==3.3.0
 
