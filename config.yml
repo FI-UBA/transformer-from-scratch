@@ -5,37 +5,37 @@ dataset:
   # Datasource name
   name: "opus_books"
   # The source language
-  src_lang: "en"
+  src_lang: "es"
   # The target language
-  tgt_lang: "es"
+  tgt_lang: "pt"
   # Filter from the dataset the sentences exceding seq_len-2 tokens (long sentences)
   filter_long_sentences: true
 
 # The model configuration
 model:
   # Maximum sequence length
-  seq_len: 350
+  seq_len: 102
   # Dimentionality of the embeddings
   d_model: 256
   # Number of heads in the multi-head attention
-  num_heads: 4
+  num_heads: 8
   # Number of encoder layers
-  num_encoder_layers: 2
+  num_encoder_layers: 3
   # Number of decoder layers
-  num_decoder_layers: 2
+  num_decoder_layers: 3
   # The feedforward dimensionality for the last fully connected layer
-  dim_feedforward: 1024
+  dim_feedforward: 2048
   # The dropout rate
   dropout: 0.1
 
 # The training configuration
 training:
   # The batch size
-  batch_size: 12
+  batch_size: 16
   # The number of epochs to train
-  num_epochs: 10
+  num_epochs: 10000
   # The learning rate
-  lr: 0.0002
+  lr: 0.0001
   # Folder name to save the model weights
   model_folder: "weights"
   # Basename for the model weights
@@ -44,6 +44,8 @@ training:
   preload: "latest"
   # Tokenizer template: The {0} will be replaced by the language code
   tokenizer_file: "tokenizer_{0}.json"
+  # The number of samples to use for validation
+  num_val_samples: 3
 
 tensorboard:
   # The folder to save the logs for Tensorboard

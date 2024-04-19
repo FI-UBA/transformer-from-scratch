@@ -309,7 +309,7 @@ def train_model(config):
 
         # Validation
         run_validation(model, val_dataloader, tokenizer_src, tokenizer_tgt, config['model']['seq_len'], device,
-                    lambda msg: batch_iterator.write(msg), global_step, writer)
+                    lambda msg: batch_iterator.write(msg), global_step, writer, num_examples=config['training']['num_val_samples'])
 
         # Save the model
         model_filename = get_weights_file_path(config, f'{epoch:04d}')

@@ -106,5 +106,5 @@ class BilingualDataset(Dataset):
 
 def causal_mask(seq_len):
     mask = torch.ones(1, seq_len, seq_len)
-    mask = torch.triu(mask, diagonal=1).type(torch.int)
-    return mask == 0  # (1, Seq_Len, Seq_Len)
+    mask = torch.tril(mask).type(torch.bool)
+    return mask     # (1, Seq_Len, Seq_Len)

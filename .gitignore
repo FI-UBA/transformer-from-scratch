@@ -10,5 +10,4 @@ __pycache__
 runs
 opus_books_weights
 
-tokenizer_en.json
-tokenizer_es.json
+tokenizer_*.json
