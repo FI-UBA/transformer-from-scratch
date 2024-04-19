@@ -34,3 +34,10 @@ pip install -U pip && pip install -r requirements.txt
 ```
 
 Done!. 
+
+## Running Tensorboard from console
+
+```bash
+tensorboard --logdir runs/tmodel --bind_all serve
+```
+
