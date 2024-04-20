@@ -311,14 +311,15 @@ def train_model(config):
         run_validation(model, val_dataloader, tokenizer_src, tokenizer_tgt, config['model']['seq_len'], device,
                     lambda msg: batch_iterator.write(msg), global_step, writer, num_examples=config['training']['num_val_samples'])
 
-        # Save the model
-        model_filename = get_weights_file_path(config, f'{epoch:04d}')
-        torch.save({
-            'epoch': epoch,
-            'model_state_dict': model.state_dict(),
-            'optimizer_state_dict': optimizer.state_dict(),
-            'global_step': global_step
-        }, model_filename)
+        if epoch % config['training']['save_every'] == 0:
+            # Save the model
+            model_filename = get_weights_file_path(config, f'{epoch:04d}')
+            torch.save({
+                'epoch': epoch,
+                'model_state_dict': model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+                'global_step': global_step
+            }, model_filename)
 
 
 if __name__ == "__main__":

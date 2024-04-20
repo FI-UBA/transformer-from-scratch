@@ -50,6 +50,8 @@ training:
   tokenizer_file: "tokenizer_{0}.json"
   # The number of samples to use for validation
   num_val_samples: 3
+  # Interval to save the model weights in epochs
+  save_interval: 20
 
 tensorboard:
   # The folder to save the logs for Tensorboard
