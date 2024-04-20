@@ -1,6 +1,7 @@
 .idea
 .vscode
 .github
+.ipynb_checkpoints
 
 venv
 .venv
