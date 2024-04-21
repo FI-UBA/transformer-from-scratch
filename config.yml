@@ -16,15 +16,15 @@ model:
   # Maximum sequence length
   seq_len: 102
   # Dimentionality of the embeddings
-  d_model: 256
+  d_model: 512
   # Number of heads in the multi-head attention
   num_heads: 4
   # Number of encoder layers
-  num_encoder_layers: 3
+  num_encoder_layers: 2
   # Number of decoder layers
-  num_decoder_layers: 3
+  num_decoder_layers: 2
   # The feedforward dimensionality for the last fully connected layer
-  dim_feedforward: 1024
+  dim_feedforward: 2048
   # The dropout rate
   dropout: 0.1
 
@@ -33,13 +33,14 @@ training:
   # The batch size
   batch_size: 32
   # The number of epochs to train
-  num_epochs: 10000
-  # The learning rate for ADAM optimizer
+  num_epochs: 30000
+  # The learning rate for ADAM optimizer. 
+  # LR scheduler info: https://www.kaggle.com/code/isbhargav/guide-to-pytorch-learning-rate-scheduling
   lr: 0.0001
   # Beta1 for ADAM optimizer
   beta1: 0.9
   # Beta2 for ADAM optimizer
-  beta2: 0.998
+  beta2: 0.98
   # Folder name to save the model weights
   model_folder: "weights"
   # Basename for the model weights

@@ -3,6 +3,7 @@
 .github
 .ipynb_checkpoints
 
+seminario-env
 venv
 .venv
 

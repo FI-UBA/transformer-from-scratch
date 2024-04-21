@@ -313,7 +313,7 @@ def train_model(config):
 
         if epoch % config['training']['save_interval'] == 0:
             # Save the model
-            model_filename = get_weights_file_path(config, f'{epoch:04d}')
+            model_filename = get_weights_file_path(config, f'{epoch:05d}')
             torch.save({
                 'epoch': epoch,
                 'model_state_dict': model.state_dict(),
