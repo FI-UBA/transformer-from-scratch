@@ -247,13 +247,18 @@ def train_model(config):
     writer = SummaryWriter(config['tensorboard']['log_dir'], comment='Transformer Test')
 
     # Optimizer
-    optimizer = torch.optim.Adam(model.parameters(), lr=config['training']['lr'], 
+    optimizer = torch.optim.Adam(model.parameters(), lr=config['training']['lr0'], 
                                  betas=[config['training']['beta1'], config['training']['beta2']], eps=1e-8)
-    # optimizer = torch.optim.SGD(model.parameters(), lr=config["lr"])
+    # optimizer = torch.optim.SGD(model.parameters(), lr=config["lr0"])
+
+    # Learning rate scheduler
+    lambda1 = lambda step: np.minimum(np.power(step, -0.5), step*np.power(config['training']['warmup_steps'], -1.5))
+    scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda1)
+    lrs = []
 
     # Load the model if specified
     initial_epoch = 0
-    global_step = 0
+    global_step = -1
     preload = config['training']['preload']
     model_filename = latest_weights_file_path(config) if preload == 'latest' else get_weights_file_path(config, preload) if preload else None
     if model_filename is not None:
@@ -304,7 +309,10 @@ def train_model(config):
             # Update the weights
             optimizer.step()
             optimizer.zero_grad(set_to_none=True)
+            lrs.append(optimizer.param_groups[0]["lr"])
 
+            # Update the learning rate
+            scheduler.step()
             global_step += 1
 
         # Validation
