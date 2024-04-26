@@ -301,7 +301,7 @@ def train_model(config):
             # Log the loss
             batch_iterator.set_postfix({f'loss': f'{loss.item():6.3f}'})
             writer.add_scalar("Loss/train", loss.item(), global_step=global_step)
-            writer.flush()
+            # writer.flush()
 
             # Backward pass
             loss.backward()
@@ -310,6 +310,9 @@ def train_model(config):
             optimizer.step()
             optimizer.zero_grad(set_to_none=True)
             lrs.append(optimizer.param_groups[0]["lr"])
+
+            writer.add_scalar("LR Schedule", optimizer.param_groups[0]["lr"], global_step=global_step)
+            writer.flush()
 
             # Update the learning rate
             scheduler.step()

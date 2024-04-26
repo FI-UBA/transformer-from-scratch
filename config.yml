@@ -40,7 +40,7 @@ training:
   # Initial Learning Rate d_model^(-0.5)
   lr0: 0.044194174
   # The warmup steps for the learning rate scheduler
-  warmup_steps: 4000
+  warmup_steps: 40000
   # Beta1 for ADAM optimizer
   beta1: 0.9
   # Beta2 for ADAM optimizer
