@@ -33,14 +33,14 @@ training:
   # The batch size
   batch_size: 32
   # The number of epochs to train
-  num_epochs: 30000
+  num_epochs: 20000
   # The learning rate for ADAM optimizer. 
   # LR scheduler info: https://www.kaggle.com/code/isbhargav/guide-to-pytorch-learning-rate-scheduling
   lr: 0.0001
   # Initial Learning Rate d_model^(-0.5)
   lr0: 0.044194174
   # The warmup steps for the learning rate scheduler
-  warmup_steps: 40000
+  warmup_steps: 2000
   # Beta1 for ADAM optimizer
   beta1: 0.9
   # Beta2 for ADAM optimizer
@@ -56,7 +56,7 @@ training:
   # The number of samples to use for validation
   num_val_samples: 3
   # Interval to save the model weights in epochs
-  save_interval: 20
+  save_interval: 100
 
 tensorboard:
   # The folder to save the logs for Tensorboard

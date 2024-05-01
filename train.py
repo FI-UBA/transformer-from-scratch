@@ -71,6 +71,9 @@ def run_validation(model, validation_ds, tokenizer_src, tokenizer_tgt, max_len, 
         # If we can't get the console width, use 80 as default
         console_width = 80
 
+    # # Get 3 random indexes to print
+    # idxs = [np.random.randint(1, num_examples) for _ in range(3)]
+
     with torch.no_grad():
         for batch in validation_ds:
             count += 1
@@ -83,6 +86,8 @@ def run_validation(model, validation_ds, tokenizer_src, tokenizer_tgt, max_len, 
 
             model_out = greedy_decode(model, encoder_input, encoder_mask, tokenizer_src, tokenizer_tgt, max_len, device)
 
+            # Print the source, target and model output
+            # if count in idxs:
             source_text = batch["src_text"][0]
             target_text = batch["tgt_text"][0]
             model_out_text = tokenizer_tgt.decode(model_out.detach().cpu().numpy())
@@ -249,16 +254,16 @@ def train_model(config):
     # Optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=config['training']['lr0'], 
                                  betas=[config['training']['beta1'], config['training']['beta2']], eps=1e-8)
-    # optimizer = torch.optim.SGD(model.parameters(), lr=config["lr0"])
+    # optimizer = torch.optim.SGD(model.parameters(), lr=config['training']['lr0'])
 
     # Learning rate scheduler
     lambda1 = lambda step: np.minimum(np.power(step, -0.5), step*np.power(config['training']['warmup_steps'], -1.5))
     scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda1)
-    lrs = []
+    # lrs = []
 
     # Load the model if specified
     initial_epoch = 0
-    global_step = -1
+    global_step = 0
     preload = config['training']['preload']
     model_filename = latest_weights_file_path(config) if preload == 'latest' else get_weights_file_path(config, preload) if preload else None
     if model_filename is not None:
@@ -309,18 +314,22 @@ def train_model(config):
             # Update the weights
             optimizer.step()
             optimizer.zero_grad(set_to_none=True)
-            lrs.append(optimizer.param_groups[0]["lr"])
+            # lrs.append(optimizer.param_groups[0]["lr"])
 
             writer.add_scalar("LR Schedule", optimizer.param_groups[0]["lr"], global_step=global_step)
             writer.flush()
 
-            # Update the learning rate
-            scheduler.step()
+            # # Update the learning rate
+            # scheduler.step()
             global_step += 1
 
+        # Update the learning rate
+        scheduler.step()
+
         # Validation
+        num_examples = len(val_dataloader) if config['training']['num_val_samples'] == -1 else config['training']['num_val_samples']
         run_validation(model, val_dataloader, tokenizer_src, tokenizer_tgt, config['model']['seq_len'], device,
-                    lambda msg: batch_iterator.write(msg), global_step, writer, num_examples=config['training']['num_val_samples'])
+                    lambda msg: batch_iterator.write(msg), global_step, writer, num_examples=num_examples)
 
         if epoch % config['training']['save_interval'] == 0:
             # Save the model
@@ -337,3 +346,5 @@ if __name__ == "__main__":
     config = get_config()
     train_model(config)
     print("Training completed successfully")
+
+# https://www.tensorflow.org/tensorboard/text_summaries
