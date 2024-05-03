@@ -14,11 +14,11 @@ dataset:
 # The model configuration
 model:
   # Maximum sequence length
-  seq_len: 102
+  seq_len: 152
   # Dimentionality of the embeddings
   d_model: 512
   # Number of heads in the multi-head attention
-  num_heads: 4
+  num_heads: 8
   # Number of encoder layers
   num_encoder_layers: 2
   # Number of decoder layers
@@ -30,17 +30,19 @@ model:
 
 # The training configuration
 training:
+  # Setting this flag to true will reset the training BUT will keep the model weights
+  reset: true
   # The batch size
   batch_size: 32
   # The number of epochs to train
-  num_epochs: 20000
+  num_epochs: 5000
   # The learning rate for ADAM optimizer. 
   # LR scheduler info: https://www.kaggle.com/code/isbhargav/guide-to-pytorch-learning-rate-scheduling
-  lr: 0.0001
+  with_scheduler: true
   # Initial Learning Rate d_model^(-0.5)
-  lr0: 0.044194174
-  # The warmup steps for the learning rate scheduler
-  warmup_steps: 2000
+  lr0: 0.001 # 0.044194174
+  # The warmup steps (in epochs) for the learning rate scheduler
+  warmup_steps: 1000
   # Beta1 for ADAM optimizer
   beta1: 0.9
   # Beta2 for ADAM optimizer

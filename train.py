@@ -1,4 +1,5 @@
 import os
+import signal
 from pathlib import Path
 import torch.utils.data
 from tqdm import tqdm
@@ -21,6 +22,19 @@ from tokenizers.pre_tokenizers import Whitespace
 from config import get_config, get_weights_file_path, latest_weights_file_path
 from dataset import BilingualDataset, causal_mask
 from model import build_transformer_model
+
+# Global flag to terminate the program
+terminate_program = False
+
+def signal_handler(signal, frame):
+    global terminate_program
+
+    # Handle the signal here
+    print("\x1b[31;1mSignal received, stopping training...\x1b[0m")
+    # Perform any necessary cleanup or saving of data
+    terminate_program = True
+    # Exit the program gracefully
+    # sys.exit(0)
 
 
 def greedy_decode(model, source, source_mask, tokenizer_src, tokenizer_tgt, max_len, device):
@@ -225,6 +239,8 @@ def get_model(config, vocab_src_len, vocab_tgt_len):
 
 
 def train_model(config):
+    global terminate_program
+
     # Define the device
     device = "cuda" if torch.cuda.is_available() else "mps" if torch.has_mps or torch.backends.mps.is_available() else "cpu"
     print(f' Using device: \x1b[33;1m{device}\x1b[0m')
@@ -257,9 +273,12 @@ def train_model(config):
     # optimizer = torch.optim.SGD(model.parameters(), lr=config['training']['lr0'])
 
     # Learning rate scheduler
-    lambda1 = lambda step: np.minimum(np.power(step, -0.5), step*np.power(config['training']['warmup_steps'], -1.5))
-    scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda1)
-    # lrs = []
+    with_scheduler = config['training']['with_scheduler']
+    if with_scheduler:
+        # lambda1 = lambda step: config['training']['lr0'] if step==0 else np.minimum(np.power(step, -0.5), step*np.power(config['training']['warmup_steps'], -1.5))
+        lambda1 = lambda step: np.minimum(np.power(step, -0.5), step*np.power(config['training']['warmup_steps'], -1.5))
+        scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda1)
+        # lrs = []
 
     # Load the model if specified
     initial_epoch = 0
@@ -270,16 +289,21 @@ def train_model(config):
         print('Preloading model from ', model_filename)
         checkpoint = torch.load(model_filename)
         model.load_state_dict(checkpoint['model_state_dict'])
-        initial_epoch = checkpoint['epoch'] + 1
-        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-        global_step = checkpoint['global_step']
+        if not config['training']['reset']:
+            initial_epoch = checkpoint['epoch'] + 1
+            optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+            global_step = checkpoint['global_step']
     else:
         print('No model to preload. \x1b[39;1mStarting from scratch!\x1b[0m')
 
     # Loss function. Ignore the padding tokens
     criterion = nn.CrossEntropyLoss(ignore_index=tokenizer_src.token_to_id("[PAD]"), label_smoothing=0.1).to(device)
 
-    for epoch in range(initial_epoch, config['training']['num_epochs']):
+    # Set initial epoch
+    epoch = initial_epoch
+
+    # Training loop
+    while not terminate_program and epoch < config['training']['num_epochs']:
         torch.cuda.empty_cache()
         model.train()
         batch_iterator = tqdm(train_dataloader, desc=f'Epoch {epoch:4d}', total=len(train_dataloader))
@@ -316,15 +340,19 @@ def train_model(config):
             optimizer.zero_grad(set_to_none=True)
             # lrs.append(optimizer.param_groups[0]["lr"])
 
-            writer.add_scalar("LR Schedule", optimizer.param_groups[0]["lr"], global_step=global_step)
+            for group in range(0, len(optimizer.param_groups)):
+                writer.add_scalar(f"LR Schedule Group {group}", optimizer.param_groups[group]["lr"], global_step=global_step)
             writer.flush()
 
-            # # Update the learning rate
-            # scheduler.step()
+            # if with_scheduler:
+            #     # Update the learning rate
+            #     scheduler.step()
+            
             global_step += 1
 
-        # Update the learning rate
-        scheduler.step()
+        if with_scheduler:
+            # Update the learning rate
+            scheduler.step()
 
         # Validation
         num_examples = len(val_dataloader) if config['training']['num_val_samples'] == -1 else config['training']['num_val_samples']
@@ -332,6 +360,7 @@ def train_model(config):
                     lambda msg: batch_iterator.write(msg), global_step, writer, num_examples=num_examples)
 
         if epoch % config['training']['save_interval'] == 0:
+            print(f'Saving model at epoch {epoch}...')
             # Save the model
             model_filename = get_weights_file_path(config, f'{epoch:05d}')
             torch.save({
@@ -341,10 +370,29 @@ def train_model(config):
                 'global_step': global_step
             }, model_filename)
 
+        # Increment the epoch
+        epoch += 1
+    #
+    # Save last weights
+    print(f'Saving model at epoch {epoch-1}...')
+    # Save the model
+    model_filename = get_weights_file_path(config, f'{epoch-1:05d}')
+    torch.save({
+        'epoch': epoch-1,
+        'model_state_dict': model.state_dict(),
+        'optimizer_state_dict': optimizer.state_dict(),
+        'global_step': global_step
+    }, model_filename)
+
 
 if __name__ == "__main__":
+    # Register the signal handler
+    signal.signal(signal.SIGINT, signal_handler)
+    # Get config
     config = get_config()
+    # Train the model
     train_model(config)
-    print("Training completed successfully")
+    #
+    print("Done!")
 
 # https://www.tensorflow.org/tensorboard/text_summaries
