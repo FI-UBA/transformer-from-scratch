@@ -2,6 +2,8 @@
 
 Youtube link: https://www.youtube.com/watch?v=ISNdQcPhsts
 
+https://colab.research.google.com/github/institutohumai/cursos-python/blob/master/NLP/6_Transformers/2_Implementacion.ipynb
+
 ## Dataset
 
 https://huggingface.co/datasets/Helsinki-NLP/opus_books
